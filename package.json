@@ -1,0 +1,15 @@
+{
+  "name": "lotto-signal-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "한국 로또 6/45 통계 분석 및 50,000회 시뮬레이션 웹 앱",
+  "scripts": {
+    "start": "node server.js",
+    "update-data": "node scripts/update-data.js",
+    "test": "node tests/analysis.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

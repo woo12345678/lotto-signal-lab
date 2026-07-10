@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090a0d">
+  <meta name="description" content="역대 로또 6/45 데이터를 분석하고 50,000회 가중 시뮬레이션으로 상위 5개 번호 조합을 제시합니다.">
+  <title>Lotto Signal Lab — 로또 6/45 데이터 분석</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Lotto Signal Lab 홈">
+      <span class="brand-mark"><i></i><i></i><i></i></span>
+      <span>LOTTO SIGNAL LAB</span>
+    </a>
+    <div class="header-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="headerStatus">데이터 연결 중</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">KOREA LOTTO 6/45 · QUANTITATIVE NUMBER LAB</p>
+        <h1>우연을 예측하지 않고<br><em>데이터를 해석합니다.</em></h1>
+        <p class="hero-description">역대 당첨 데이터의 빈도, 최근 흐름, 미출현 간격과 번호 간 결합도를 계산한 뒤 50,000회의 가중 모의 추첨을 수행합니다.</p>
+        <div class="hero-actions">
+          <button class="primary-action" id="startButton" disabled>
+            <span>전문 분석 시작</span>
+            <span class="button-arrow">↗</span>
+          </button>
+          <span class="hero-note">분석 소요시간 약 2–4초</span>
+        </div>
+      </div>
+
+      <aside class="latest-card" aria-label="최근 당첨 결과">
+        <div class="card-meta">
+          <span>LATEST VERIFIED DRAW</span>
+          <span id="latestDate">—</span>
+        </div>
+        <div class="latest-title"><strong id="latestRound">—</strong><span>회 당첨번호</span></div>
+        <div class="lotto-balls" id="latestBalls" aria-live="polite">
+          <span class="ball skeleton"></span><span class="ball skeleton"></span><span class="ball skeleton"></span>
+          <span class="ball skeleton"></span><span class="ball skeleton"></span><span class="ball skeleton"></span>
+        </div>
+        <div class="bonus-row"><span>보너스</span><span id="bonusBall">—</span></div>
+        <div class="latest-footer">
+          <div><small>1등 당첨자</small><strong id="firstWinners">—</strong></div>
+          <div><small>1인당 당첨금</small><strong id="firstPrize">—</strong></div>
+        </div>
+      </aside>
+
+      <div class="hero-index"><span>01</span><i></i><span>DATA INTAKE</span></div>
+    </section>
+
+    <section class="dashboard hidden" id="dashboard" aria-live="polite">
+      <div class="analysis-head">
+        <div>
+          <p class="eyebrow">SIMULATION ENGINE</p>
+          <h2>50,000회 분석 리포트</h2>
+        </div>
+        <div class="analysis-meta">
+          <span id="drawCount">—</span>
+          <span id="analysisTime">—</span>
+          <button id="rerunButton" class="text-button">다시 분석</button>
+        </div>
+      </div>
+
+      <div class="progress-panel" id="progressPanel">
+        <div class="progress-copy">
+          <span id="progressStage">통계 모델 준비</span>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track"><i id="progressBar"></i></div>
+        <div class="process-grid">
+          <span data-step="history">HISTORY</span><span data-step="weight">WEIGHTING</span>
+          <span data-step="simulation">MONTE CARLO</span><span data-step="ranking">RANKING</span>
+        </div>
+      </div>
+
+      <div class="results hidden" id="results">
+        <section class="result-hero">
+          <div class="rank-label">PRIMARY SIGNAL · RANK 01</div>
+          <h3>가장 높은 종합 점수를 기록한 조합</h3>
+          <div class="primary-numbers" id="primaryNumbers"></div>
+          <div class="primary-metrics">
+            <div><span>모델 점수</span><strong id="primaryScore">—</strong></div>
+            <div><span>조합 출현</span><strong id="primaryAppearances">—</strong></div>
+            <div><span>고정 당첨 확률</span><strong>1 / 8,145,060</strong></div>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-title"><span>02</span><div><p>ENSEMBLE SELECTION</p><h3>상위 추천 5세트</h3></div></div>
+          <div class="set-grid" id="setGrid"></div>
+        </section>
+
+        <section class="insight-grid section-block">
+          <div class="number-ranking panel">
+            <div class="panel-head"><div><p>NUMBER SIGNAL</p><h3>개별 번호 시뮬레이션 순위</h3></div><span>TOP 12</span></div>
+            <div id="numberTable" class="number-table"></div>
+          </div>
+          <div class="model-summary panel">
+            <div class="panel-head"><div><p>MODEL READOUT</p><h3>선택 조합 구조</h3></div></div>
+            <div class="summary-ring" id="summaryRing"><span><strong id="sumValue">—</strong><small>번호 합계</small></span></div>
+            <dl class="summary-list">
+              <div><dt>홀수 : 짝수</dt><dd id="oddEven">—</dd></div>
+              <div><dt>저번호 : 고번호</dt><dd id="lowHigh">—</dd></div>
+              <div><dt>연속 번호 쌍</dt><dd id="consecutive">—</dd></div>
+              <div><dt>역대 회차</dt><dd id="historyTotal">—</dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="section-block frequency-section">
+          <div class="section-title"><span>03</span><div><p>HISTORICAL DISTRIBUTION</p><h3>1–45 역대 출현 분포</h3></div></div>
+          <div class="frequency-chart" id="frequencyChart"></div>
+          <div class="chart-legend"><span><i class="legend-hot"></i>평균 이상</span><span><i class="legend-base"></i>평균 이하</span></div>
+        </section>
+
+        <section class="methodology section-block">
+          <div class="section-title"><span>04</span><div><p>METHODOLOGY & RISK</p><h3>분석 기준</h3></div></div>
+          <div class="method-grid">
+            <article><strong>32%</strong><h4>장기 출현 빈도</h4><p>전체 회차 대비 번호별 출현 편차를 표준화합니다.</p></article>
+            <article><strong>25%</strong><h4>최근 52회 흐름</h4><p>최근 1년 구간의 상대적인 과열과 침체를 반영합니다.</p></article>
+            <article><strong>23%</strong><h4>미출현 간격</h4><p>마지막 출현 이후의 회차 간격을 제한된 가중치로 사용합니다.</p></article>
+            <article><strong>20%</strong><h4>결합·구조 점수</h4><p>번호 쌍 이력과 합계, 홀짝, 구간 균형을 함께 평가합니다.</p></article>
+          </div>
+          <div class="risk-note"><strong>중요 고지</strong><p>로또 6/45의 모든 6개 조합은 실제 추첨에서 동일한 당첨 확률을 가집니다. 표시된 선택률은 50,000회 모델 시뮬레이션 내부의 빈도이며 미래 당첨 확률이나 당첨을 보장하지 않습니다.</p></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>LOTTO SIGNAL LAB / 2026</span>
+    <span id="dataSource">마지막 저장 데이터 확인 중</span>
+    <span>통계 기반 엔터테인먼트 도구</span>
+  </footer>
+
+  <script src="analysis.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
