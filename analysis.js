@@ -120,6 +120,8 @@
     const candidates = new Map();
     const chunkSize = options.chunkSize || 1250;
     const random = options.random || Math.random;
+    const candidateLimit = options.candidateLimit || 18000;
+    const retainedCandidates = options.retainedCandidates || 4000;
 
     for (let start = 0; start < iterations; start += chunkSize) {
       const end = Math.min(iterations, start + chunkSize);
@@ -131,6 +133,13 @@
         const previous = candidates.get(key);
         if (!previous || score > previous.score) candidates.set(key, { numbers, score, appearances: (previous?.appearances || 0) + 1 });
         else previous.appearances++;
+      }
+      if (candidates.size > candidateLimit) {
+        const retained = [...candidates.entries()]
+          .sort((a, b) => (b[1].score + b[1].appearances * 0.0005) - (a[1].score + a[1].appearances * 0.0005))
+          .slice(0, retainedCandidates);
+        candidates.clear();
+        retained.forEach(([key, value]) => candidates.set(key, value));
       }
       if (options.onProgress) options.onProgress(end / iterations);
       if (end < iterations) await new Promise(resolve => setTimeout(resolve, 0));

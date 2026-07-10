@@ -9,6 +9,8 @@
   };
   let historyPayload = null;
   let analysisRunning = false;
+  let selectedIterations = 250000;
+  let displayedDrawNo = null;
 
   function formatMoney(value) {
     if (!Number.isFinite(value)) return '—';
@@ -34,6 +36,9 @@
   }
 
   function renderLatest(draw) {
+    displayedDrawNo = draw.draw_no;
+    const isLatest = historyPayload && draw.draw_no === historyPayload.latest_draw;
+    $('#drawLabel').textContent = isLatest ? 'LATEST VERIFIED DRAW' : 'HISTORICAL DRAW ARCHIVE';
     $('#latestRound').textContent = draw.draw_no.toLocaleString('ko-KR');
     $('#latestDate').textContent = formatDate(draw.date);
     $('#latestBalls').innerHTML = draw.numbers.map(number => makeBall(number)).join('');
@@ -41,6 +46,17 @@
     const first = draw.divisions?.[0];
     $('#firstWinners').textContent = first?.winners ? `${first.winners.toLocaleString('ko-KR')}명` : '—';
     $('#firstPrize').textContent = first?.prize ? formatMoney(first.prize) : '—';
+    $('#historyInput').value = draw.draw_no;
+    $('#historyInput').max = historyPayload?.latest_draw || draw.draw_no;
+    $('#previousDrawButton').disabled = draw.draw_no <= 1;
+    $('#nextDrawButton').disabled = !historyPayload || draw.draw_no >= historyPayload.latest_draw;
+  }
+
+  function showDraw(drawNo) {
+    if (!historyPayload) return;
+    const safeDrawNo = Math.max(1, Math.min(historyPayload.latest_draw, Number(drawNo) || historyPayload.latest_draw));
+    const draw = historyPayload.draws.find(item => item.draw_no === safeDrawNo);
+    if (draw) renderLatest(draw);
   }
 
   function readLocalCache() {
@@ -113,6 +129,32 @@
     steps.forEach((step, index) => step.classList.toggle('active', value >= [0.02, 0.12, 0.2, 0.93][index]));
   }
 
+  function runSimulationOffThread(iterations) {
+    if (!window.Worker) {
+      return LottoEngine.runSimulation(historyPayload.draws, iterations, {
+        chunkSize: iterations >= 500000 ? 5000 : 2500,
+        onProgress: progress => updateProgress(0.18 + progress * 0.74, `가중 모의 추첨 ${Math.round(progress * iterations).toLocaleString('ko-KR')} / ${iterations.toLocaleString('ko-KR')}`)
+      });
+    }
+    return new Promise((resolve, reject) => {
+      const worker = new Worker('simulation-worker.js');
+      worker.onmessage = event => {
+        if (event.data.type === 'progress') {
+          const progress = event.data.progress;
+          updateProgress(0.18 + progress * 0.74, `가중 모의 추첨 ${Math.round(progress * iterations).toLocaleString('ko-KR')} / ${iterations.toLocaleString('ko-KR')}`);
+        } else if (event.data.type === 'complete') {
+          worker.terminate();
+          resolve(event.data.report);
+        } else if (event.data.type === 'error') {
+          worker.terminate();
+          reject(new Error(event.data.message));
+        }
+      };
+      worker.onerror = error => { worker.terminate(); reject(new Error(error.message || 'Worker 실행 오류')); };
+      worker.postMessage({ draws: historyPayload.draws, iterations });
+    });
+  }
+
   async function analyze() {
     if (analysisRunning || !historyPayload) return;
     analysisRunning = true;
@@ -121,6 +163,7 @@
     elements.results.classList.add('hidden');
     elements.start.disabled = true;
     elements.rerun.disabled = true;
+    document.querySelectorAll('.mode-option').forEach(button => { button.disabled = true; });
     updateProgress(0.03, '역대 당첨 이력 검증');
     elements.dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const started = performance.now();
@@ -130,10 +173,8 @@
     await new Promise(resolve => setTimeout(resolve, 250));
 
     try {
-      const report = await LottoEngine.runSimulation(historyPayload.draws, 50000, {
-        chunkSize: 1000,
-        onProgress: progress => updateProgress(0.18 + progress * 0.74, `가중 모의 추첨 ${Math.round(progress * 50000).toLocaleString('ko-KR')} / 50,000`)
-      });
+      $('#reportIterations').textContent = selectedIterations.toLocaleString('ko-KR');
+      const report = await runSimulationOffThread(selectedIterations);
       updateProgress(0.96, '상위 조합 교차 검증');
       await new Promise(resolve => setTimeout(resolve, 350));
       renderReport(report, performance.now() - started);
@@ -148,6 +189,7 @@
       analysisRunning = false;
       elements.start.disabled = false;
       elements.rerun.disabled = false;
+      document.querySelectorAll('.mode-option').forEach(button => { button.disabled = false; });
     }
   }
 
@@ -159,7 +201,7 @@
     $('#analysisTime').textContent = `${(elapsedMs / 1000).toFixed(2)}초`;
     $('#primaryNumbers').innerHTML = primary.numbers.map((number, index) => `<span class="result-ball" style="animation-delay:${index * 55}ms">${number}</span>`).join('');
     $('#primaryScore').textContent = `${modelScore(primary).toFixed(1)} / 100`;
-    $('#primaryAppearances').textContent = `${primary.appearances.toLocaleString('ko-KR')}회 / 50,000`;
+    $('#primaryAppearances').textContent = `${primary.appearances.toLocaleString('ko-KR')}회 / ${report.iterations.toLocaleString('ko-KR')}`;
 
     $('#setGrid').innerHTML = report.topSets.map((set, index) => `
       <article class="set-card" data-numbers="${set.numbers.join(', ')}" tabindex="0" role="button" aria-label="추천 ${index + 1}위 번호 복사">
@@ -213,6 +255,24 @@
       card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') copy(); });
     });
   }
+
+  const durationHints = { 50000: '약 1초', 100000: '약 2초', 250000: '약 5초', 500000: '약 10–20초', 1000000: '약 20초 이상' };
+  document.querySelectorAll('.mode-option').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedIterations = Number(button.dataset.iterations);
+      document.querySelectorAll('.mode-option').forEach(item => item.classList.toggle('selected', item === button));
+      $('#modeWarning').classList.toggle('hidden', selectedIterations !== 1000000);
+      $('.hero-note').textContent = `예상 분석시간 ${durationHints[selectedIterations]}`;
+      $('#reportIterations').textContent = selectedIterations.toLocaleString('ko-KR');
+    });
+  });
+
+  $('#viewDrawButton').addEventListener('click', () => showDraw($('#historyInput').value));
+  $('#historyInput').addEventListener('keydown', event => { if (event.key === 'Enter') showDraw(event.currentTarget.value); });
+  $('#previousDrawButton').addEventListener('click', () => showDraw(displayedDrawNo - 1));
+  $('#nextDrawButton').addEventListener('click', () => showDraw(displayedDrawNo + 1));
+  $('#latestDrawButton').addEventListener('click', () => showDraw(historyPayload?.latest_draw));
+  $('#randomDrawButton').addEventListener('click', () => { if (historyPayload) showDraw(Math.floor(Math.random() * historyPayload.latest_draw) + 1); });
 
   elements.start.addEventListener('click', analyze);
   elements.rerun.addEventListener('click', analyze);

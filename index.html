@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#090a0d">
-  <meta name="description" content="역대 로또 6/45 데이터를 분석하고 50,000회 가중 시뮬레이션으로 상위 5개 번호 조합을 제시합니다.">
+  <meta name="description" content="역대 로또 6/45 데이터를 분석하고 최대 1,000,000회 가중 시뮬레이션으로 상위 5개 번호 조합을 제시합니다.">
   <title>Lotto Signal Lab — 로또 6/45 데이터 분석</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,19 +30,27 @@
       <div class="hero-copy">
         <p class="eyebrow">KOREA LOTTO 6/45 · QUANTITATIVE NUMBER LAB</p>
         <h1>우연을 예측하지 않고<br><em>데이터를 해석합니다.</em></h1>
-        <p class="hero-description">역대 당첨 데이터의 빈도, 최근 흐름, 미출현 간격과 번호 간 결합도를 계산한 뒤 50,000회의 가중 모의 추첨을 수행합니다.</p>
+        <p class="hero-description">역대 당첨 데이터의 빈도, 최근 흐름, 미출현 간격과 번호 간 결합도를 계산한 뒤 선택한 규모의 가중 모의 추첨을 수행합니다.</p>
+        <div class="simulation-picker" aria-label="시뮬레이션 횟수 선택">
+          <button class="mode-option" data-iterations="50000"><strong>빠른 분석</strong><span>50,000회</span><small>저사양 휴대폰</small></button>
+          <button class="mode-option" data-iterations="100000"><strong>정밀 분석</strong><span>100,000회</span><small>일반 휴대폰·PC</small></button>
+          <button class="mode-option selected" data-iterations="250000"><strong>전문가 분석</strong><span>250,000회</span><small>기본 권장</small></button>
+          <button class="mode-option" data-iterations="500000"><strong>심층 분석</strong><span>500,000회</span><small>성능 좋은 PC</small></button>
+          <button class="mode-option laboratory" data-iterations="1000000"><strong>연구실 모드</strong><span>1,000,000회</span><small>고성능 · 주의</small></button>
+        </div>
+        <p class="mode-warning hidden" id="modeWarning">연구실 모드는 기기에 따라 20초 이상 걸릴 수 있습니다. 계산 중에도 화면은 계속 반응합니다.</p>
         <div class="hero-actions">
           <button class="primary-action" id="startButton" disabled>
             <span>전문 분석 시작</span>
             <span class="button-arrow">↗</span>
           </button>
-          <span class="hero-note">분석 소요시간 약 2–4초</span>
+          <span class="hero-note">예상 분석시간 약 5초</span>
         </div>
       </div>
 
       <aside class="latest-card" aria-label="최근 당첨 결과">
         <div class="card-meta">
-          <span>LATEST VERIFIED DRAW</span>
+          <span id="drawLabel">LATEST VERIFIED DRAW</span>
           <span id="latestDate">—</span>
         </div>
         <div class="latest-title"><strong id="latestRound">—</strong><span>회 당첨번호</span></div>
@@ -55,6 +63,16 @@
           <div><small>1등 당첨자</small><strong id="firstWinners">—</strong></div>
           <div><small>1인당 당첨금</small><strong id="firstPrize">—</strong></div>
         </div>
+        <div class="history-browser">
+          <div class="history-label"><span>HISTORY BROWSER</span><button id="latestDrawButton">최신 회차</button></div>
+          <div class="history-search">
+            <button id="previousDrawButton" aria-label="이전 회차">‹</button>
+            <label><input id="historyInput" type="number" min="1" inputmode="numeric" aria-label="조회할 회차"><span>회</span></label>
+            <button id="viewDrawButton">조회</button>
+            <button id="nextDrawButton" aria-label="다음 회차">›</button>
+          </div>
+          <button class="random-draw" id="randomDrawButton">무작위 과거 회차 보기</button>
+        </div>
       </aside>
 
       <div class="hero-index"><span>01</span><i></i><span>DATA INTAKE</span></div>
@@ -64,7 +82,7 @@
       <div class="analysis-head">
         <div>
           <p class="eyebrow">SIMULATION ENGINE</p>
-          <h2>50,000회 분석 리포트</h2>
+          <h2><span id="reportIterations">250,000</span>회 분석 리포트</h2>
         </div>
         <div class="analysis-meta">
           <span id="drawCount">—</span>
@@ -133,7 +151,7 @@
             <article><strong>23%</strong><h4>미출현 간격</h4><p>마지막 출현 이후의 회차 간격을 제한된 가중치로 사용합니다.</p></article>
             <article><strong>20%</strong><h4>결합·구조 점수</h4><p>번호 쌍 이력과 합계, 홀짝, 구간 균형을 함께 평가합니다.</p></article>
           </div>
-          <div class="risk-note"><strong>중요 고지</strong><p>로또 6/45의 모든 6개 조합은 실제 추첨에서 동일한 당첨 확률을 가집니다. 표시된 선택률은 50,000회 모델 시뮬레이션 내부의 빈도이며 미래 당첨 확률이나 당첨을 보장하지 않습니다. 본 사이트는 동행복권의 공식 서비스가 아니며 최종 당첨 결과는 동행복권 공식 사이트에서 확인해야 합니다.</p></div>
+          <div class="risk-note"><strong>중요 고지</strong><p>로또 6/45의 모든 6개 조합은 실제 추첨에서 동일한 당첨 확률을 가집니다. 표시된 선택률은 사용자가 선택한 횟수의 모델 시뮬레이션 내부 빈도이며 미래 당첨 확률이나 당첨을 보장하지 않습니다. 본 사이트는 동행복권의 공식 서비스가 아니며 최종 당첨 결과는 동행복권 공식 사이트에서 확인해야 합니다.</p></div>
         </section>
       </div>
     </section>
