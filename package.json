@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "update-data": "node scripts/update-data.js",
-    "test": "node tests/analysis.test.js && node tests/drum-engine.test.js && node tests/drum-ui.test.js"
+    "test": "node tests/analysis.test.js && node tests/drum-engine.test.js && node tests/drum-ui.test.js && node tests/game-showcase.test.js"
   },
   "engines": {
     "node": ">=18"
