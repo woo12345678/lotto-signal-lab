@@ -78,6 +78,36 @@
       <div class="hero-index"><span>01</span><i></i><span>DATA INTAKE</span></div>
     </section>
 
+    <section class="drum-studio" id="drumStudio" aria-labelledby="drumTitle">
+      <div class="drum-copy">
+        <p class="eyebrow">LIVE DRAW CHAMBER · PHYSICAL 6/45</p>
+        <h2 id="drumTitle">45개의 공이 부딪히고,<br><em>게이트가 하나를 선택합니다.</em></h2>
+        <p>원형 경계 반사, 공-공 충돌, 회전 난류를 매 프레임 계산합니다. 충분히 혼합된 뒤 하단 게이트에 실제로 도달한 공을 한 개씩 배출합니다.</p>
+        <dl class="drum-specs">
+          <div><dt>CHAMBER</dt><dd>45 BALLS</dd></div>
+          <div><dt>PHYSICS</dt><dd>60 FPS</dd></div>
+          <div><dt>OUTPUT</dt><dd>6 UNIQUE</dd></div>
+        </dl>
+        <button class="drum-start" id="drumStartButton" type="button">
+          <span>물리 추첨 시작</span><i aria-hidden="true">●</i>
+        </button>
+        <p class="drum-disclaimer">오락용 물리 시각화이며 실제 동행복권 추첨 결과와 무관합니다.</p>
+      </div>
+      <div class="drum-console">
+        <div class="console-head">
+          <span><i></i> DRAW SYSTEM ONLINE</span>
+          <strong id="drumStatus" aria-live="polite">대기 중 · 45 BALLS LOADED</strong>
+        </div>
+        <div class="drum-stage">
+          <canvas id="lottoDrumCanvas" width="900" height="620" aria-label="45개 로또 공 물리 추첨 애니메이션"></canvas>
+          <div class="stage-vignette" aria-hidden="true"></div>
+        </div>
+        <div class="drawn-rail" id="drawnBallRail" aria-label="추첨된 번호" aria-live="polite">
+          <span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span>
+        </div>
+      </div>
+    </section>
+
     <section class="dashboard hidden" id="dashboard" aria-live="polite">
       <div class="analysis-head">
         <div>
@@ -164,6 +194,8 @@
   </footer>
 
   <script src="analysis.js"></script>
+  <script src="drum-engine.js"></script>
+  <script src="drum-animation.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
